@@ -368,3 +368,62 @@ CREATE INDEX [IX_categories_name] ON [dbo].[categories]([name]);
 
 GO
 
+-- Create the post_categories table
+
+BEGIN TRY
+	CREATE TABLE [dbo].[post_categories] (
+		[post_id] INT NOT NULL, -- The ID of the post
+		[category_id] INT NOT NULL, -- The ID of the category
+		CONSTRAINT [PK_post_categories] PRIMARY KEY ([post_id], [category_id]), -- Compound key of the post_id and the catgeroy_id
+		CONSTRAINT [FK_post_categories_post] FOREIGN KEY ([post_id])
+		REFERENCES [dbo].[posts]([posts_id])
+		ON UPDATE NO ACTION
+		ON DELETE CASCADE, -- If the post is deleted, remove all related records
+		CONSTRAINT [FK_post_categories_category] FOREIGN KEY ([category_id])
+		REFERENCES [dbo].[categories]([category_id])
+		ON UPDATE NO ACTION
+		ON DELETE NO ACTION
+	);
+END TRY
+BEGIN CATCH
+	IF EXISTS (SELECT * FROM [sys].[tables] WHERE [name] = 'post_categories')
+		PRINT 'Table post_categories already exists.';
+	ELSE
+		PRINT 'Creating post_categories table.';
+END CATCH;
+
+-- Create the user_viewed_posts table
+
+BEGIN TRY
+	CREATE TABLE [dbo].[user_viewed_posts] (
+		[user_viewed_post_id] INT NOT NULL IDENTITY(1,1),
+		[date_viewed] DATETIMEOFFSET NOT NULL CONSTRAINT [DF_user_viewed_posts_date_viewed] DEFAULT CURRENT_TIMESTAMP, -- Default to current date and time
+		[user_id] INT NOT NULL, -- The ID of the user that viewed the post
+		[post_id] INT NOT NULL, -- The ID of the post that was veiwed
+		CONSTRAINT [PK_user_viewed_posts] PRIMARY KEY ([user_viewed_post_id]),
+		CONSTRAINT [FK_user_viewed_posts_user] FOREIGN KEY ([user_id])
+		REFERENCES [dbo].[users]([users_id])
+		ON UPDATE NO ACTION
+		ON DELETE NO ACTION,
+		CONSTRAINT [FK_user_viewed_posts_post] FOREIGN KEY ([post_id])
+		REFERENCES [dbo].[posts]([posts_id])
+		ON UPDATE NO ACTION
+		ON DELETE NO ACTION
+	);
+END TRY
+BEGIN CATCH
+	IF EXISTS (SELECT * FROM [sys].[tables] WHERE [name] = 'user_viewed_posts')
+		PRINT 'Table user_viewed_posts already exists.';
+	ELSE
+		PRINT 'Creating user_viewed_posts table.';
+END CATCH;
+
+-- Create indexes for the user_viewed_posts table
+
+CREATE INDEX [IX_user_viewed_posts_date_viewed] ON [dbo].[user_viewed_posts]([date_viewed]);
+
+CREATE INDEX [IX_user_viewed_posts_user_id] ON [dbo].[user_viewed_posts]([user_id]);
+
+CREATE INDEX [IX_user_viewed_posts_post_id] ON [dbo].[user_viewed_posts]([post_id]);
+
+GO
